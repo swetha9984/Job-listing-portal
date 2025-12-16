@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobSeekerProfile JobSeekerProfile?
+  employerProfile  EmployerProfile?
+}
+
+model JobSeekerProfile {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String?
+  lastName     String?
+  bio          String?
+  resumeUrl    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+}
+
+model EmployerProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String?
+  website     String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  jobs        Job[]
+}
+
+model Job {
+  id              String          @id @default(uuid())
+  employerId      String
+  employer        EmployerProfile @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  location        String
+  salaryMin       Int?
+  salaryMax       Int?
+  jobType         String          // "FULL_TIME", "PART_TIME", "CONTRACT", "REMOTE"
+  requirements    String?
+  status          String          @default("ACTIVE") // "ACTIVE", "CLOSED"
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  applications    Application[]
+}
+
+model Application {
+  id            String           @id @default(uuid())
+  jobId         String
+  job           Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobSeekerId   String
+  jobSeeker     JobSeekerProfile @relation(fields: [jobSeekerId], references: [id], onDelete: Cascade)
+  coverLetter   String?
+  status        String           @default("PENDING") // "PENDING", "REVIEWED", "ACCEPTED", "REJECTED"
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([jobId, jobSeekerId])
+}
